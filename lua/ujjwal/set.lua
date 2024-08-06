@@ -1,4 +1,4 @@
-vim.opt.guifont = { "Iosevka Nerd Font", ":h13" }
+vim.opt.guifont = { "Zed Mono Expanded", ":h13" }
 
 if vim.g.neovide then
   vim.g.neovide_transparency = 1.0

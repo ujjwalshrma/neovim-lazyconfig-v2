@@ -55,31 +55,22 @@ local plugins = {
         icons_enabled = false,
         component_separators = '|',
         section_separators = '',
-        theme = 'monokai-pro',
+        theme = 'ayu',
       },
     },
   },
   {
-    'loctvl842/monokai-pro.nvim',
-    name = 'monokai-pro',
+    'Shatur/neovim-ayu',
+    name = 'ayu',
     priority = 1000,
     config = function ()
-      require("monokai-pro").setup({
-        filter = "pro",
-        transparent_background = true,
-        styles = {
-          comment = { italic = false },
-          keyword = { italic = false }, -- any other keyword
-          type = { italic = false }, -- (preferred) int, long, char, etc
-          storageclass = { italic = false }, -- static, register, volatile, etc
-          structure = { italic = false }, -- struct, union, enum, etc
-          parameter = { italic = false }, -- parameter pass in function
-          annotation = { italic = false },
-          tag_attribute = { italic = false }, -- attribute of tag in reactjs
-        },
+      require("ayu").setup({
+        mirage = true, -- Set to `true` to use `mirage` variant instead of `dark` for dark background.
+        terminal = true, -- Set to `false` to let terminal manage its own colors.
+        overrides = {},
       })
 
-      vim.cmd([[colorscheme monokai-pro]])
+      vim.cmd([[colorscheme ayu]])
     end
   },
   { "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {},
@@ -97,11 +88,63 @@ local plugins = {
     config = function() require("nvim-autopairs").setup {} end
   },
   {
+    "williamboman/mason.nvim",
+    "williamboman/mason-lspconfig.nvim",
+    "neovim/nvim-lspconfig",
+  },
+  {
     'gpanders/editorconfig.nvim'
   },
   { 'mfussenegger/nvim-jdtls' },
   {
     'lewis6991/gitsigns.nvim',
+  },
+  {
+    "pmizio/typescript-tools.nvim",
+    dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+    opts = {},
+    config = function()
+      require("typescript-tools").setup {
+        on_attach =
+            function(client, bufnr)
+              client.server_capabilities.documentFormattingProvider = false
+              client.server_capabilities.documentRangeFormattingProvider = false
+            end,
+        settings = {
+          jsx_close_tag = {
+            enable = true,
+            filetypes = { "javascriptreact", "typescriptreact" },
+          }
+        }
+      }
+    end
+  },
+  {
+    'stevearc/conform.nvim',
+    config = function()
+      require("conform").setup({
+        formatters_by_ft = {
+          html = { { "prettierd" } },
+          javascript = { { "prettierd" } },
+          javascriptreact = { { "prettierd" } },
+          markdown = { { "prettierd" } },
+          typescript = { { "prettierd" } },
+          typescriptreact = { { "prettierd" } },
+          ["*"] = { "trim_whitespace" },
+        },
+        format_on_save = {
+          timeout_ms = 500,
+          lsp_fallback = true,
+        },
+        formatters = {
+          prettierd = {
+            condition = function()
+              return vim.loop.fs_realpath(".prettierrc.js") ~= nil or vim.loop.fs_realpath(".prettierrc.mjs") ~= nil
+            end,
+          },
+        },
+      })
+    end,
   },
 }
 

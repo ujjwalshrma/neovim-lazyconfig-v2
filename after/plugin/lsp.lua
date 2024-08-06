@@ -4,6 +4,8 @@ local cmp = require('cmp')
 
 local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
+require('mason').setup({})
+
 cmp.setup({
   mapping = cmp.mapping.preset.insert({
     ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
