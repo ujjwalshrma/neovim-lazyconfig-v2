@@ -1,49 +1,78 @@
-local lsp_zero = require('lsp-zero')
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('user_lsp_attach', {clear = true}),
+  callback = function(event)
+    local opts = {buffer = event.buf}
 
-local cmp = require('cmp')
-
-local cmp_select = { behavior = cmp.SelectBehavior.Select }
-
-require('mason').setup({})
-
-cmp.setup({
-  mapping = cmp.mapping.preset.insert({
-    ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
-    ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
-    ['<cr>'] = cmp.mapping.confirm({ select = true }),
-    ["<C-Space>"] = cmp.mapping.complete(),
-  })
+    vim.keymap.set('n', 'gd', function() vim.lsp.buf.definition() end, opts)
+    vim.keymap.set('n', 'K', function() vim.lsp.buf.hover() end, opts)
+    vim.keymap.set('n', '<leader>vws', function() vim.lsp.buf.workspace_symbol() end, opts)
+    vim.keymap.set('n', '<leader>vd', function() vim.diagnostic.open_float() end, opts)
+    vim.keymap.set('n', '[d', function() vim.diagnostic.goto_next() end, opts)
+    vim.keymap.set('n', ']d', function() vim.diagnostic.goto_prev() end, opts)
+    vim.keymap.set('n', '<leader>vca', function() vim.lsp.buf.code_action() end, opts)
+    vim.keymap.set('n', '<leader>vrr', function() vim.lsp.buf.references() end, opts)
+    vim.keymap.set('n', '<leader>vrn', function() vim.lsp.buf.rename() end, opts)
+    vim.keymap.set('i', '<C-h>', function() vim.lsp.buf.signature_help() end, opts)
+  end,
 })
 
+local lsp_capabilities = require('cmp_nvim_lsp').default_capabilities()
 
-lsp_zero.set_preferences({
-  suggest_lsp_servers = false,
-  sign_icons = {
-    error = 'E',
-    warn = 'W',
-    hint = 'H',
-    info = 'I'
+require('mason').setup({})
+require('mason-lspconfig').setup({
+  ensure_installed = {'tsserver', 'rust_analyzer'},
+  handlers = {
+    function(server_name)
+      require('lspconfig')[server_name].setup({
+        capabilities = lsp_capabilities,
+      })
+    end,
+    lua_ls = function()
+      require('lspconfig').lua_ls.setup({
+        capabilities = lsp_capabilities,
+        settings = {
+          Lua = {
+            runtime = {
+              version = 'LuaJIT'
+            },
+            diagnostics = {
+              globals = {'vim'},
+            },
+            workspace = {
+              library = {
+                vim.env.VIMRUNTIME,
+              }
+            }
+          }
+        }
+      })
+    end,
   }
 })
 
-lsp_zero.on_attach(function(client, bufnr)
-  lsp_zero.default_keymaps({buffer = bufnr})
+local cmp = require('cmp')
+local cmp_select = {behavior = cmp.SelectBehavior.Select}
 
-  vim.keymap.set("n", "gd", function() vim.lsp_zero.buf.definition() end, opts)
-  vim.keymap.set("n", "K", function() vim.lsp_zero.buf.hover() end, opts)
-  vim.keymap.set("n", "<leader>vws", function() vim.lsp_zero.buf.workspace_symbol() end, opts)
-  vim.keymap.set("n", "<leader>vd", function() vim.diagnostic.open_float() end, opts)
-  vim.keymap.set("n", "[d", function() vim.diagnostic.goto_next() end, opts)
-  vim.keymap.set("n", "<leader>vca", function() vim.lsp_zero.buf.code_action() end, opts)
-  vim.keymap.set("n", "]d", function() vim.diagnostic.goto_prev() end, opts)
-end)
+-- this is the function that loads the extra snippets to luasnip
+-- from rafamadriz/friendly-snippets
+require('luasnip.loaders.from_vscode').lazy_load()
 
---Enable (broadcasting) snippet capability for completion
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities.textDocument.completion.completionItem.snippetSupport = true
-
-require'lspconfig'.cssls.setup {
-  capabilities = capabilities,
-}
-
-require'lspconfig'.biome.setup{}
+cmp.setup({
+  sources = {
+    {name = 'path'},
+    {name = 'nvim_lsp'},
+    {name = 'luasnip', keyword_length = 2},
+    {name = 'buffer', keyword_length = 3},
+  },
+  mapping = cmp.mapping.preset.insert({
+    ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
+    ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
+    ['<C-y>'] = cmp.mapping.confirm({ select = true }),
+    ['<C-Space>'] = cmp.mapping.complete(),
+  }),
+  snippet = {
+    expand = function(args)
+      require('luasnip').lsp_expand(args.body)
+    end,
+  },
+})
